@@ -1,0 +1,28 @@
+{
+  "profiles": [
+    {
+      "color": "Cyan",
+      "env_count": 2,
+      "has_azd": false,
+      "has_azure": true,
+      "has_gh": false,
+      "has_git": false,
+      "has_kube": false,
+      "label": "Alpha Dev",
+      "name": "alpha",
+      "path": "<tmp>/profiles/<name>.toml"
+    },
+    {
+      "color": "Magenta",
+      "env_count": 0,
+      "has_azd": false,
+      "has_azure": false,
+      "has_gh": false,
+      "has_git": true,
+      "has_kube": false,
+      "label": "Beta Prod",
+      "name": "beta",
+      "path": "<tmp>/profiles/<name>.toml"
+    }
+  ]
+}

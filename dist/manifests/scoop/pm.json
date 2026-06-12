@@ -1,0 +1,40 @@
+{
+  "$schema": "https://raw.githubusercontent.com/ScoopInstaller/Scoop/master/schema.json",
+  "version": "0.1.0",
+  "description": "Multi-environment developer profile manager (pm) — Azure, GitHub, kubectl, git identity, secrets, from one profile.",
+  "homepage": "https://github.com/bvorland/profilmanager",
+  "license": "MIT",
+  "notes": [
+    "Add 'pm' to your shell so PM_SESSION_ID is bound for every shell:",
+    "  PowerShell:  Invoke-Expression (& pm session init --shell pwsh)",
+    "  bash/zsh:    eval \"$(pm session init --shell bash)\"",
+    "See https://github.com/bvorland/profilmanager/blob/main/dist/INSTALL.md"
+  ],
+  "architecture": {
+    "64bit": {
+      "url": "https://github.com/bvorland/profilmanager/releases/download/v0.1.0/pm_0.1.0_windows_amd64.zip",
+      "hash": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "arm64": {
+      "url": "https://github.com/bvorland/profilmanager/releases/download/v0.1.0/pm_0.1.0_windows_arm64.zip",
+      "hash": "0000000000000000000000000000000000000000000000000000000000000000"
+    }
+  },
+  "bin": "pm.exe",
+  "checkver": {
+    "github": "https://github.com/bvorland/profilmanager"
+  },
+  "autoupdate": {
+    "architecture": {
+      "64bit": {
+        "url": "https://github.com/bvorland/profilmanager/releases/download/v$version/pm_$version_windows_amd64.zip"
+      },
+      "arm64": {
+        "url": "https://github.com/bvorland/profilmanager/releases/download/v$version/pm_$version_windows_arm64.zip"
+      }
+    },
+    "hash": {
+      "url": "https://github.com/bvorland/profilmanager/releases/download/v$version/checksums.txt"
+    }
+  }
+}

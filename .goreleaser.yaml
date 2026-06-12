@@ -1,0 +1,182 @@
+# .goreleaser.yaml
+#
+# GoReleaser v2 configuration for profilmanager (`pm`).
+#
+# What this produces on a `git tag vX.Y.Z && git push --tags` release:
+#   - 6 cross-compiled binaries (linux/darwin/windows × amd64/arm64)
+#   - Archives: tar.gz for Unix, zip for Windows; each contains the binary,
+#     LICENSE, and README.md
+#   - checksums.txt (SHA-256) over every archive
+#   - GitHub Release with auto-generated changelog (chore/ci/docs filtered)
+#
+# Out of scope for v0 (intentionally disabled, kept here as commented stubs):
+#   - cosign signing — enable once a signing identity (keyless OIDC or
+#     dedicated key) is established. See `signs:` block below.
+#   - Homebrew tap publishing — wire up once `bvorland/homebrew-tap` exists
+#     and a tap-push token is available. See `brews:` block below.
+#   - Scoop bucket auto-publish — manual via dist/manifests/scoop/pm.json
+#     until a `bvorland/scoop-bucket` repo exists.
+#   - Winget submission — manual via `winget-create submit` against the
+#     generated manifest. See dist/manifests/winget/README.md.
+#
+# Run locally to validate without releasing:
+#   goreleaser check
+#   goreleaser release --snapshot --clean --skip=publish
+version: 2
+
+project_name: pm
+
+# GoReleaser's output directory. Default is `dist/`, but we use `dist/`
+# for our hand-maintained package manifests (Homebrew formula, winget
+# template, Scoop manifest, INSTALL.md). `--clean` would otherwise nuke
+# them. `build/` is gitignored.
+dist: build
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: pm
+    main: ./cmd/pm
+    binary: pm
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    # Strip DWARF tables and symbol info for smaller binaries, and inject
+    # version metadata. The var paths MUST match internal/cli/version.go.
+    ldflags:
+      - -s -w
+      - -X github.com/bvorland/profilmanager/internal/cli.Version={{.Version}}
+      - -X github.com/bvorland/profilmanager/internal/cli.Commit={{.Commit}}
+      - -X github.com/bvorland/profilmanager/internal/cli.Date={{.Date}}
+    mod_timestamp: '{{ .CommitTimestamp }}'
+
+archives:
+  - id: pm
+    ids:
+      - pm
+    # Unix archives are tar.gz; Windows archives are zip. Matches the
+    # ecosystem expectation and lets install.sh / install.ps1 use the
+    # native unpacker on each platform.
+    formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_
+      {{- if eq .Os "darwin" }}darwin
+      {{- else if eq .Os "linux" }}linux
+      {{- else if eq .Os "windows" }}windows
+      {{- else }}{{ .Os }}{{ end }}_
+      {{- if eq .Arch "amd64" }}amd64
+      {{- else if eq .Arch "arm64" }}arm64
+      {{- else }}{{ .Arch }}{{ end }}
+    files:
+      - LICENSE
+      - README.md
+      - CONTRIBUTING.md
+
+checksum:
+  name_template: 'checksums.txt'
+  algorithm: sha256
+
+# cosign signing — DISABLED in v0. Enable once a signing identity is
+# established (keyless OIDC via GitHub Actions is recommended).
+#
+# signs:
+#   - cmd: cosign
+#     env:
+#       - COSIGN_EXPERIMENTAL=1
+#     certificate: '${artifact}.pem'
+#     args:
+#       - sign-blob
+#       - '--output-certificate=${certificate}'
+#       - '--output-signature=${signature}'
+#       - '${artifact}'
+#       - --yes
+#     artifacts: checksum
+#     output: true
+
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+      - '^docs:'
+      - '^docs\('
+      - '^chore:'
+      - '^chore\('
+      - '^ci:'
+      - '^ci\('
+      - '^test:'
+      - '^test\('
+      - 'Merge pull request'
+      - 'Merge branch'
+  groups:
+    - title: Features
+      regexp: '^.*?feat(\([[:word:]]+\))??!?:.+$'
+      order: 0
+    - title: Bug fixes
+      regexp: '^.*?fix(\([[:word:]]+\))??!?:.+$'
+      order: 1
+    - title: Other changes
+      order: 999
+
+release:
+  github:
+    owner: bvorland
+    name: profilmanager
+  draft: false
+  # Auto-detect pre-release from the semver (anything with -alpha, -beta, -rc,
+  # etc. is flagged as pre-release in GitHub Releases).
+  prerelease: auto
+  name_template: 'v{{ .Version }}'
+  header: |
+    ## profilmanager {{ .Tag }}
+
+    See [INSTALL.md](https://github.com/bvorland/profilmanager/blob/main/dist/INSTALL.md)
+    for installation options.
+  footer: |
+    ---
+    **Full changelog:** https://github.com/bvorland/profilmanager/compare/{{ .PreviousTag }}...{{ .Tag }}
+
+# Homebrew tap — DISABLED in v0. Uncomment and flip `skip_upload: auto` to
+# false once `bvorland/homebrew-tap` exists and a tap-push token is wired.
+#
+# brews:
+#   - name: pm
+#     repository:
+#       owner: bvorland
+#       name: homebrew-tap
+#       branch: main
+#       token: '{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}'
+#     directory: Formula
+#     homepage: 'https://github.com/bvorland/profilmanager'
+#     description: 'Multi-environment developer profile manager'
+#     license: 'MIT'
+#     skip_upload: auto
+#     install: |
+#       bin.install "pm"
+#     test: |
+#       system "#{bin}/pm", "version"
+
+# Scoop bucket — DISABLED in v0. Uncomment once a scoop bucket repository
+# exists. Until then dist/manifests/scoop/pm.json serves as a manual install
+# manifest.
+#
+# scoops:
+#   - name: pm
+#     repository:
+#       owner: bvorland
+#       name: scoop-bucket
+#       branch: main
+#     homepage: 'https://github.com/bvorland/profilmanager'
+#     description: 'Multi-environment developer profile manager'
+#     license: 'MIT'

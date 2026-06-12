@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "windows-azd-shellout probe result envelope",
+  "description": "Schema for the JSON object emitted by scripts/isolation/windows-azd-shellout/probe.ps1. The probe asserts that azd, when invoked with AZURE_CONFIG_DIR + AZD_CONFIG_DIR set, does not write into $HOME/.azure or $HOME/.azd during config-only flows that shell out to az. See docs/isolation-matrix.md#6 for context.",
+  "type": "object",
+  "required": [
+    "test", "tool", "category", "hypothesis", "expected", "actual",
+    "isolated", "skipped", "skip_reason", "duration_ms", "notes",
+    "host", "tool_version", "probe_version", "generated_at"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "test":         { "const": "windows-azd-shellout" },
+    "tool":         { "const": "azd" },
+    "category":     { "const": "cross-tool" },
+    "hypothesis":   { "type": "string", "minLength": 1 },
+    "expected":     { "type": "string", "minLength": 1 },
+    "actual":       { "type": "string" },
+    "isolated":     { "type": ["boolean", "null"] },
+    "skipped":      { "type": "boolean" },
+    "skip_reason":  { "type": ["string", "null"] },
+    "duration_ms":  { "type": "integer", "minimum": 0 },
+    "notes":        { "type": "array", "items": { "type": "string" } },
+    "host":         { "type": "object" },
+    "tool_version": { "type": ["string", "null"] },
+    "probe_version":{ "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "generated_at": { "type": "string", "format": "date-time" }
+  },
+  "examples": [
+    {
+      "test": "windows-azd-shellout",
+      "tool": "azd",
+      "category": "cross-tool",
+      "hypothesis": "azd preserves AZURE_CONFIG_DIR and AZD_CONFIG_DIR when shelling out to az during a config-only flow; $HOME/.azure and $HOME/.azd are untouched.",
+      "expected": "After 'azd config show' + 'azd version' with both env vars set: $T_azure and $T_azd are populated (or at least mtime-touched); $HOME/.azure and $HOME/.azd mtimes are unchanged; azd exit code is 0.",
+      "actual": "tempAzureFiles=0; tempAzdFiles=2; newHomeAzureFiles=0; newHomeAzdFiles=0; homeAzureMtimeUnchanged=True; homeAzdMtimeUnchanged=True; azdConfigExit=0; azdVersionExit=0",
+      "isolated": true,
+      "skipped": false,
+      "skip_reason": null,
+      "duration_ms": 412,
+      "notes": [
+        "platform=windows",
+        "azd config show: exit=0 duration_ms=180",
+        "azd version    : exit=0 duration_ms=232",
+        "FOLLOW-UP: this probe does NOT cover 'azd auth login' (interactive). That remains a manual smoke test per docs/isolation-matrix.md#6."
+      ],
+      "host": { "os": "Windows", "version": "10.0.22631" },
+      "tool_version": "azd version 1.10.1",
+      "probe_version": "1.0.0",
+      "generated_at": "2026-06-09T10:51:17.000Z"
+    },
+    {
+      "test": "windows-azd-shellout",
+      "tool": "azd",
+      "category": "cross-tool",
+      "hypothesis": "azd preserves AZURE_CONFIG_DIR and AZD_CONFIG_DIR when shelling out to az during a config-only flow; $HOME/.azure and $HOME/.azd are untouched.",
+      "expected": "After 'azd config show' + 'azd version' with both env vars set: $T_azure and $T_azd are populated (or at least mtime-touched); $HOME/.azure and $HOME/.azd mtimes are unchanged; azd exit code is 0.",
+      "actual": "",
+      "isolated": null,
+      "skipped": true,
+      "skip_reason": "azd CLI not found on PATH",
+      "duration_ms": 0,
+      "notes": [],
+      "host": { "os": "Linux" },
+      "tool_version": null,
+      "probe_version": "1.0.0",
+      "generated_at": "2026-06-09T10:51:17.000Z"
+    }
+  ]
+}

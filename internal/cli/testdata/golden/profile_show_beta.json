@@ -1,0 +1,10 @@
+{
+  "color": "Magenta",
+  "git": {
+    "user_email": "beta@example.com",
+    "user_name": "Beta User"
+  },
+  "label": "Beta Prod",
+  "name": "beta",
+  "schema": "1"
+}

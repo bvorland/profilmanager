@@ -1,0 +1,77 @@
+# .github/workflows/release.yml
+#
+# Tag-driven release pipeline. Triggers on any `vX.Y.Z` tag push.
+#
+# Contract:
+#   1. Run `go test ./...` first — a tag must never publish a failing build.
+#   2. Run goreleaser with `--clean` to produce archives, checksums, and
+#      the GitHub Release.
+#   3. GITHUB_TOKEN scoped to `contents: write` only (no `packages:` or
+#      `id-token:` until cosign is enabled).
+#   4. Concurrency group `release-<ref>` prevents two pipelines racing on
+#      the same tag (`cancel-in-progress: false` so we never abandon a
+#      half-published release).
+#
+# Not yet wired:
+#   - cosign / sigstore (needs `id-token: write` and a `signs:` block in
+#     .goreleaser.yaml — both intentionally disabled in v0).
+#   - Homebrew/Scoop tap auto-PRs (needs a tap-push PAT in repo secrets).
+
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  test:
+    name: test (gate)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.5'
+          cache: true
+
+      - name: go test
+        run: go test -race -timeout 5m ./...
+
+  goreleaser:
+    name: goreleaser
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        # GoReleaser needs the full history to render the changelog.
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.5'
+          cache: true
+
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          distribution: goreleaser
+          version: '~> v2'
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

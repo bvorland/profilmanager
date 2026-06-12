@@ -1,0 +1,31 @@
+{
+  "active_profile": "(none — host config)",
+  "drift": null,
+  "providers": [
+    {
+      "error": "<masked>",
+      "logged_in": false,
+      "provider": "az"
+    },
+    {
+      "error": "<masked>",
+      "logged_in": false,
+      "provider": "azd"
+    },
+    {
+      "error": "<masked>",
+      "logged_in": false,
+      "provider": "gh"
+    },
+    {
+      "error": "<masked>",
+      "logged_in": false,
+      "provider": "git"
+    },
+    {
+      "error": "<masked>",
+      "logged_in": false,
+      "provider": "kubectl"
+    }
+  ]
+}

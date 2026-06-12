@@ -1,0 +1,60 @@
+# Winget manifest template — profilmanager
+#
+# This is a single-file manifest. The canonical multi-file form lives in
+# microsoft/winget-pkgs. For an actual submission we generate the three
+# split files (Installer, DefaultLocale, Version) with `wingetcreate`.
+#
+# Placeholders to substitute when cutting a release:
+#   <VERSION>     -> the release semver, e.g. 0.1.0 (no leading "v")
+#   <SHA256_X64>  -> sha256 of pm_<VERSION>_windows_amd64.zip
+#   <SHA256_ARM>  -> sha256 of pm_<VERSION>_windows_arm64.zip
+#
+# Submission flow (manual until automated):
+#   1. After GoReleaser publishes the GitHub Release, grab the SHA-256
+#      values from `checksums.txt`.
+#   2. `wingetcreate update bvorland.profilmanager \
+#         --urls <amd64-zip-url>|x64 <arm64-zip-url>|arm64 \
+#         --version <VERSION> \
+#         --submit`
+#   3. Or hand-edit a copy of this file and PR it to microsoft/winget-pkgs
+#      under manifests/b/bvorland/profilmanager/<VERSION>/.
+
+PackageIdentifier: bvorland.profilmanager
+PackageVersion: <VERSION>
+PackageLocale: en-US
+Publisher: Bjørn Atle Vorland
+PublisherUrl: https://github.com/bvorland
+PublisherSupportUrl: https://github.com/bvorland/profilmanager/issues
+PackageName: profilmanager
+PackageUrl: https://github.com/bvorland/profilmanager
+License: MIT
+LicenseUrl: https://github.com/bvorland/profilmanager/blob/main/LICENSE
+Copyright: Copyright (c) 2026 Bjørn Atle Vorland
+ShortDescription: Multi-environment developer profile manager (pm).
+Description: |
+  pm manages multiple developer environments (Azure subscriptions, GitHub
+  accounts, kubectl contexts, git identity, secrets) from one profile
+  model. Run `pm` to launch the interactive TUI, or use the scriptable
+  verbs (`pm session`, `pm profile`, `pm doctor`, ...) from automation.
+Moniker: pm
+Tags:
+  - cli
+  - developer-tools
+  - profile-manager
+  - environment
+  - dotfiles
+InstallerType: zip
+NestedInstallerType: portable
+NestedInstallerFiles:
+  - RelativeFilePath: pm.exe
+    PortableCommandAlias: pm
+Installers:
+  - Architecture: x64
+    InstallerUrl: https://github.com/bvorland/profilmanager/releases/download/v<VERSION>/pm_<VERSION>_windows_amd64.zip
+    InstallerSha256: <SHA256_X64>
+  - Architecture: arm64
+    InstallerUrl: https://github.com/bvorland/profilmanager/releases/download/v<VERSION>/pm_<VERSION>_windows_arm64.zip
+    InstallerSha256: <SHA256_ARM>
+ReleaseDate: <YYYY-MM-DD>
+ManifestType: singleton
+ManifestVersion: 1.6.0

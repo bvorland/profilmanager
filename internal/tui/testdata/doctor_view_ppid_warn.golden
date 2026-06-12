@@ -1,0 +1,14 @@
+                                                                                                       
+ Doctor                                                                                                
+                                                                                                       
+ Profiles dir:         <profiles-dir>   ✓ ok                                                           
+ Session ID:           12345                                                                           
+ Session source:       ppid-fallback  ╭──────────────────────────────────────────────────────────────╮ 
+ │ ⚠ ppid fallback is fragile — set PM_SESSION_ID for stability │                                      
+ ╰──────────────────────────────────────────────────────────────╯                                      
+ Active profile:       (none)                                                                          
+                                                                                                       
+ Provider checks: pending (next phase)                                                                 
+                                                                                                       
+ r refresh · esc back                                                                                  
+                                                                                                       

@@ -1,0 +1,24 @@
+                                                                                     
+ Edit profile                                                                        
+                                                                                     
+ Name:                   Contoso.MainDev  (read-only)                                
+ Label:                  > 🔵 Contoso Main Dev                                       
+ Color:                  > Cyan                                                ████  
+ Azure ConfigDir:        > ~/.azure-Contoso.MainDev                                  
+ Azure SubscriptionID:   > 11111111-1111-1111-1111-111111111111                      
+ Azure TenantID:         > 22222222-2222-2222-2222-222222222222                      
+ Azd ConfigDir:          > ~/.azd-Acme.Dev                                           
+ Azd SubscriptionID:     >                                                           
+ GitHub Account:         >                                                           
+ Kube Context:           >                                                           
+ Kube Namespace:         >                                                           
+ Git UserName:           > Bjørn Atle Vorland                                        
+ Git UserEmail:          > alex@example.com                                          
+ Git SigningKey:         >                                                           
+                                                                                     
+ Env entries (2)                                                                     
+   DEPLOY_ENV            value = dev                                                 
+   API_KEY               ref   = op://Vault/Dev/api_key                              
+                                                                                     
+ tab/⇧tab move · ctrl+s save · esc cancel                                            
+                                                                                     

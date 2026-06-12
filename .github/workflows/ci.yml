@@ -1,0 +1,298 @@
+# .github/workflows/ci.yml
+#
+# Primary build / lint / test workflow for profilmanager (`pm`).
+#
+# What this does:
+#   - Runs on every push to any branch and on every pull request.
+#   - Matrix: {windows, macos, ubuntu} x {Go 1.25.x, Go stable}.
+#   - Three jobs (run as separate jobs on each matrix cell):
+#       lint   — 'gofmt -l .' must produce no output, then 'go vet ./...'
+#       test   — 'go test -race -timeout 5m ./...'
+#       build  — 'go build -o pm ./cmd/pm', upload the binary as a build artifact.
+#
+# Why each step exists:
+#   - actions/checkout@v4   — get the source code.
+#   - actions/setup-go@v5   — install Go matching the matrix entry.
+#                             We pin to major versions (@v4, @v5) — never @latest —
+#                             so a breaking action release cannot silently change CI.
+#   - gofmt -l .            — fails if ANY file would be reformatted. Style policy
+#                             is "what gofmt says". A non-empty stdout means the
+#                             code is not gofmt-clean; the step then exits 1.
+#   - go vet ./...          — catches simple correctness bugs without external tools.
+#                             golangci-lint is intentionally deferred for now.
+#   - go test -race         — race detector across all platforms. Race is supported on
+#                             windows/amd64 in modern Go and we want the coverage.
+#                             If this is unacceptably slow on
+#                             Windows, drop -race there with a comment AND open an
+#                             issue so we can revisit.
+#   - go build ./cmd/pm     — produces the actual binary we ship. The artifact upload
+#                             gives a fast way to grab a build from any commit
+#                             without provisioning Go locally.
+#
+# Notes for the v1 baseline:
+#   - The matrix is small on purpose. Add Go 1.23 / 1.24 entries when those releases
+#     ship and we want forward-compat signal.
+
+name: ci
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+# Allow only one concurrent CI run per ref; cancel older runs when a new commit
+# lands. Keeps wall-clock honest for active branches and saves CI minutes.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: lint (${{ matrix.os }} / go ${{ matrix.go }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:   [ubuntu-latest, macos-latest, windows-latest]
+        go:   ['1.25.x', 'stable']
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go ${{ matrix.go }}
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go }}
+          cache: true
+
+      # gofmt -l prints any file that would be reformatted. We fail the job if it
+      # prints anything. Two-step pattern works identically on bash and pwsh.
+      - name: gofmt
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT=$(gofmt -l .)
+          if [ -n "$OUT" ]; then
+            echo "::error::The following files are not gofmt-clean:"
+            echo "$OUT"
+            echo ""
+            echo "Run 'gofmt -w .' locally and commit the result."
+            exit 1
+          fi
+          echo "gofmt: clean"
+
+      - name: go vet
+        run: go vet ./...
+
+  test:
+    name: test (${{ matrix.os }} / go ${{ matrix.go }})
+    runs-on: ${{ matrix.os }}
+    needs: lint
+    strategy:
+      fail-fast: false
+      matrix:
+        os:   [ubuntu-latest, macos-latest, windows-latest]
+        go:   ['1.25.x', 'stable']
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go ${{ matrix.go }}
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go }}
+          cache: true
+
+      # Race detector is supported on every platform in this matrix. We keep it
+      # everywhere by default — concurrency bugs that only show up on one OS are
+      # exactly the bugs we're trying to catch. If Windows becomes unacceptably
+      # slow in practice, change the line below to:
+      #   if: runner.os != 'Windows'
+      # and add a separate `test-windows-norace` step. Document the reason here.
+      - name: go test
+        run: go test -race -timeout 5m ./...
+
+  build:
+    name: build (${{ matrix.os }} / go ${{ matrix.go }})
+    runs-on: ${{ matrix.os }}
+    needs: lint
+    strategy:
+      fail-fast: false
+      matrix:
+        os:   [ubuntu-latest, macos-latest, windows-latest]
+        go:   ['1.25.x', 'stable']
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go ${{ matrix.go }}
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go }}
+          cache: true
+
+      # Produce the binary. The output filename is 'pm' on Linux/macOS and
+      # 'pm.exe' on Windows — Go honors the .exe extension automatically when
+      # building on Windows, so we only need to differentiate the upload path.
+      - name: go build ./cmd/pm
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${RUNNER_OS}" = "Windows" ]; then
+            go build -o pm.exe ./cmd/pm
+          else
+            go build -o pm     ./cmd/pm
+          fi
+
+      - name: Upload binary
+        # We pin to v4 here (no floating @latest). v4 is the current major series
+        # for actions/upload-artifact at the time of this workflow's creation.
+        uses: actions/upload-artifact@v4
+        with:
+          # Per-OS-per-Go artifact name so all matrix cells can coexist.
+          name: pm-${{ matrix.os }}-go${{ matrix.go }}
+          path: |
+            pm
+            pm.exe
+          if-no-files-found: error
+          retention-days: 14
+
+  # ────────────────────────────────────────────────────────────────────────
+  # golden-drift
+  # ────────────────────────────────────────────────────────────────────────
+  # golden-drift: fails if any golden file under internal/{cli,tui}/testdata/
+  # would change when regenerated. The contract is: goldens are checked in
+  # and re-runnable with `-update`; CI must catch drift the moment it ships.
+  #
+  # How it works:
+  #   1. Run `go test ./... -run TestGolden|TestRender` WITHOUT -update.
+  #      A drift will fail the test directly with a diff in the failure log.
+  #   2. Then `git diff --exit-code` over the golden directories as a
+  #      belt-and-suspenders check (catches the case where someone
+  #      checked in -update output without also re-running, or where a
+  #      test mutates a golden on disk during a non-update run).
+  #
+  # Single-OS (linux). Goldens are platform-portable by design (NO_COLOR +
+  # masked paths); running on three OSes triples cost without raising signal.
+  golden-drift:
+    name: golden-drift
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go (stable)
+        uses: actions/setup-go@v5
+        with:
+          go-version: 'stable'
+          cache: true
+
+      - name: Run golden tests (no -update)
+        run: |
+          set -euo pipefail
+          go test -count=1 -run 'TestGolden|TestRender' ./internal/cli/... ./internal/tui/...
+
+      - name: Assert no golden drift on disk
+        run: |
+          set -euo pipefail
+          # If a golden test mutated testdata/ during a non-update run,
+          # git would see modified files. Print and fail with context.
+          if ! git diff --quiet -- 'internal/cli/testdata' 'internal/tui/testdata'; then
+            echo "::error::Golden drift detected. Files changed under testdata/ during a non-update run:"
+            git --no-pager diff -- 'internal/cli/testdata' 'internal/tui/testdata'
+            echo ""
+            echo "If this is intentional, run 'go test ./internal/cli ./internal/tui -update' locally and commit the result."
+            exit 1
+          fi
+          echo "golden-drift: clean"
+
+  # ────────────────────────────────────────────────────────────────────────
+  # integration
+  # ────────────────────────────────────────────────────────────────────────
+  # integration: end-to-end fake-CLI integration tests. Builds the real
+  # `pm` binary, drops fake az/azd/gh/kubectl/git scripts on a shimmed
+  # PATH, and exercises the full CLI surface.
+  #
+  # Linux-only on purpose (and documented in internal/cli/integration_test.go):
+  # the fake CLIs are POSIX shell scripts and the test relies on:
+  #   - executable bit + shebang dispatch (Windows ignores both)
+  #   - PATH separator semantics (':' vs ';')
+  #   - process-substitution of args via $@
+  # macOS would in principle work but adds runner time without raising
+  # signal — the fake-CLI harness exercises the cobra surface, not OS
+  # process model. macOS is already covered by the unit test + build
+  # matrix above.
+  integration:
+    name: integration (fake-CLI)
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go (stable)
+        uses: actions/setup-go@v5
+        with:
+          go-version: 'stable'
+          cache: true
+
+      - name: Run integration tests
+        # -tags integration unlocks the //go:build integration files.
+        # -count=1 disables result caching for a clean run every time.
+        run: go test -tags integration -count=1 -timeout 5m ./internal/cli/...
+
+  # ────────────────────────────────────────────────────────────────────────
+  # cross-build
+  # ────────────────────────────────────────────────────────────────────────
+  # cross-build: exercises GOOS/GOARCH combos to keep build tags honest.
+  # The secrets package ships wincred_windows.go / wincred_other.go split — if
+  # someone accidentally uses windows-only symbols outside a _windows.go
+  # file (or misses a //go:build line), this job catches it before release.
+  #
+  # We don't run tests here — that's the unit `test` matrix's job. This is
+  # pure `go build`; if it compiles, the build tags are honest.
+  cross-build:
+    name: cross-build (${{ matrix.goos }}/${{ matrix.goarch }})
+    runs-on: ubuntu-latest
+    needs: lint
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { goos: linux,   goarch: amd64 }
+          - { goos: linux,   goarch: arm64 }
+          - { goos: darwin,  goarch: amd64 }
+          - { goos: darwin,  goarch: arm64 }
+          - { goos: windows, goarch: amd64 }
+          - { goos: windows, goarch: arm64 }
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go (stable)
+        uses: actions/setup-go@v5
+        with:
+          go-version: 'stable'
+          cache: true
+
+      - name: go build ./...
+        env:
+          GOOS:   ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: '0'
+        run: |
+          set -euo pipefail
+          echo "Cross-building for $GOOS/$GOARCH"
+          # Build every package (not just ./cmd/pm) so build-tag mistakes
+          # in internal/ packages surface here too.
+          go build ./...
+          if [ "$GOOS" = "windows" ]; then
+            go build -o pm.exe ./cmd/pm
+          else
+            go build -o pm     ./cmd/pm
+          fi
+          ls -la pm pm.exe 2>/dev/null || true

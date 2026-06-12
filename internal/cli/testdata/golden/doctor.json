@@ -1,0 +1,81 @@
+{
+  "checks": [
+    {
+      "message": "<masked>",
+      "name": "profiles-dir-exists",
+      "status": "ok"
+    },
+    {
+      "message": "<masked>",
+      "name": "state-dir-writable",
+      "status": "ok"
+    },
+    {
+      "message": "<masked>",
+      "name": "session-id-source",
+      "status": "ok"
+    },
+    {
+      "message": "<masked>",
+      "name": "agent-context-has-profile",
+      "status": "warn"
+    },
+    {
+      "message": "<masked>",
+      "name": "shell-init-wrapper-loaded",
+      "status": "ok"
+    },
+    {
+      "message": "<masked>",
+      "name": "profiles-not-in-git",
+      "status": "ok"
+    },
+    {
+      "fix": "<masked>",
+      "message": "<masked>",
+      "name": "mcp-registered",
+      "status": "warn"
+    },
+    {
+      "message": "<masked>",
+      "name": "providers-registered",
+      "status": "warn"
+    },
+    {
+      "fix": "<masked>",
+      "message": "<masked>",
+      "name": "tool-available:az",
+      "status": "warn"
+    },
+    {
+      "fix": "<masked>",
+      "message": "<masked>",
+      "name": "tool-available:azd",
+      "status": "warn"
+    },
+    {
+      "fix": "<masked>",
+      "message": "<masked>",
+      "name": "tool-available:gh",
+      "status": "warn"
+    },
+    {
+      "fix": "<masked>",
+      "message": "<masked>",
+      "name": "tool-available:git",
+      "status": "warn"
+    },
+    {
+      "fix": "<masked>",
+      "message": "<masked>",
+      "name": "tool-available:kubectl",
+      "status": "warn"
+    },
+    {
+      "fix": "<masked>",
+      "message": "<masked>",
+      "name": "tool-available:pwsh",
+      "status": "warn"
+    }
+  ]
+}

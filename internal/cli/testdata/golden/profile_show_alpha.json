@@ -1,0 +1,21 @@
+{
+  "azure": {
+    "config_dir": "/tmp/azure-alpha",
+    "subscription": "00000000-0000-0000-0000-aaaaaaaaaaaa",
+    "tenant": "11111111-1111-1111-1111-aaaaaaaaaaaa"
+  },
+  "color": "Cyan",
+  "env": [
+    {
+      "key": "ALPHA_VAR",
+      "value": "alpha-literal"
+    },
+    {
+      "key": "ALPHA_SECRET",
+      "ref": "op://Vault/alpha/password"
+    }
+  ],
+  "label": "Alpha Dev",
+  "name": "alpha",
+  "schema": "1"
+}
