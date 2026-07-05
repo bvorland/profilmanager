@@ -167,7 +167,14 @@ func (wm *wizardModel) advance() tea.Cmd {
 		wm.statusErr = err.Error()
 		return nil
 	}
+	oldName := ""
+	if step.ID() == "name" {
+		oldName = strings.TrimSpace(wm.state.Name)
+	}
 	step.Apply(wm.state, input)
+	if step.ID() == "name" {
+		wm.syncNameDerivedFields(oldName, wm.state.Name)
+	}
 	wm.rawInputs[step.ID()] = input
 	wm.touched = true
 	wm.statusErr = ""
@@ -183,6 +190,32 @@ func (wm *wizardModel) advance() tea.Cmd {
 
 	wm.gotoNextStep()
 	return nil
+}
+
+func (wm *wizardModel) syncNameDerivedFields(oldName, newName string) {
+	oldName = strings.TrimSpace(oldName)
+	newName = strings.TrimSpace(newName)
+	if oldName == "" || newName == "" || oldName == newName {
+		return
+	}
+
+	wm.state.AzureConfigDir = strings.ReplaceAll(wm.state.AzureConfigDir, oldName, newName)
+	wm.state.AzdConfigDir = strings.ReplaceAll(wm.state.AzdConfigDir, oldName, newName)
+
+	for _, key := range []string{"azure_config_dir", "azd_config_dir"} {
+		if raw, ok := wm.rawInputs[key]; ok {
+			wm.rawInputs[key] = strings.ReplaceAll(raw, oldName, newName)
+		}
+	}
+
+	// Keep the auto-default label in sync with a renamed profile, while
+	// preserving custom labels.
+	if strings.TrimSpace(wm.state.Label) == oldName {
+		wm.state.Label = newName
+		if _, ok := wm.rawInputs["label"]; ok {
+			wm.rawInputs["label"] = newName
+		}
+	}
 }
 
 func (wm *wizardModel) gotoNextStep() {

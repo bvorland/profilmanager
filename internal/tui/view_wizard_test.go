@@ -1,8 +1,10 @@
 package tui
 
 import (
+	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -58,6 +60,64 @@ func TestWizardEnterOnFinalDoesNotOverflow(t *testing.T) {
 	})
 	if !app.wizard.saving || app.wizard.step != len(app.wizard.steps) {
 		t.Fatalf("enter on preview should stay on preview, saving=%v step=%d", app.wizard.saving, app.wizard.step)
+	}
+}
+
+func TestWizardNameChangeRewritesDerivedConfigDirs(t *testing.T) {
+	isolateWizardTestHome(t)
+	home, err := os.UserHomeDir()
+	if err != nil {
+		t.Fatalf("UserHomeDir: %v", err)
+	}
+
+	app := newApp(true)
+	wm := app.wizard
+	oldName := "Contoso.MainDev"
+	newName := "Contoso.NewProj"
+
+	wm.state.Name = oldName
+	wm.state.Label = oldName
+	wm.state.AzureConfigDir = filepath.Join(home, ".azure-"+oldName)
+	wm.state.AzdConfigDir = filepath.Join(home, ".azd-"+oldName)
+	wm.rawInputsFromState()
+
+	wm.step = wizardStepIndex(t, wm, "name")
+	wm.input.SetValue(newName)
+	_ = wm.advance()
+
+	if wm.state.Name != newName {
+		t.Fatalf("state name = %q, want %q", wm.state.Name, newName)
+	}
+	for field, got := range map[string]string{
+		"state.azure_config_dir": wm.state.AzureConfigDir,
+		"state.azd_config_dir":   wm.state.AzdConfigDir,
+		"raw.azure_config_dir":   wm.rawInputs["azure_config_dir"],
+		"raw.azd_config_dir":     wm.rawInputs["azd_config_dir"],
+	} {
+		if strings.Contains(got, oldName) || !strings.Contains(got, newName) {
+			t.Fatalf("%s = %q, want old name replaced with %q", field, got, newName)
+		}
+	}
+	if wm.state.Label != newName {
+		t.Fatalf("auto label should track renamed profile: got %q want %q", wm.state.Label, newName)
+	}
+}
+
+func TestWizardNameChangeKeepsCustomLabel(t *testing.T) {
+	isolateWizardTestHome(t)
+
+	app := newApp(true)
+	wm := app.wizard
+	wm.state.Name = "Equinor.PSS-Pilot"
+	wm.state.Label = "⚪ Equinor PSS Pilot"
+	wm.rawInputsFromState()
+
+	wm.step = wizardStepIndex(t, wm, "name")
+	wm.input.SetValue("Equinor.AEP-Demo")
+	_ = wm.advance()
+
+	if wm.state.Label != "⚪ Equinor PSS Pilot" {
+		t.Fatalf("custom label should stay unchanged on rename, got %q", wm.state.Label)
 	}
 }
 
