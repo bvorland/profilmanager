@@ -2,7 +2,6 @@ package cli
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
@@ -13,7 +12,11 @@ import (
 )
 
 func runDashboard(cmd *cobra.Command, _ []string) error {
-	active := strings.TrimSpace(os.Getenv("PM_ACTIVE_PROFILE"))
+	active, _, err := resolveActiveProfile()
+	if err != nil {
+		return emitError(cmd, err)
+	}
+	hasActive := active != ""
 	if active == "" {
 		active = "(none — host config)"
 	}
@@ -32,7 +35,7 @@ func runDashboard(cmd *cobra.Command, _ []string) error {
 	fmt.Fprintln(out, styleBold.Render("profilmanager"))
 	fmt.Fprintln(out)
 	fmt.Fprintln(out, styleBold.Render("Active profile:"), styleOK.Render(active))
-	if agentContext, agentVar := core.InAgentContext(); agentContext && strings.TrimSpace(os.Getenv("PM_ACTIVE_PROFILE")) == "" {
+	if agentContext, agentVar := core.InAgentContext(); agentContext && !hasActive {
 		fmt.Fprintln(out)
 		fmt.Fprintln(out, styleWarn.Render(fmt.Sprintf("⚠️  Inside an AI agent (%s set) without an active profile.", agentVar)))
 		fmt.Fprintln(out, styleWarn.Render("    Tools (including copilot) will see host config."))

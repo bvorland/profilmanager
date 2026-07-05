@@ -8,6 +8,8 @@ import (
 	"sort"
 	"strings"
 	"testing"
+
+	"github.com/bvorland/profilmanager/internal/state"
 )
 
 // TestDoctorJSONShape locks the JSON envelope and the names of the
@@ -149,6 +151,8 @@ func TestDoctorSessionIDOKWhenPMSession(t *testing.T) {
 }
 
 func TestDoctorAgentContextHasProfile(t *testing.T) {
+	testEnv(t)
+
 	clearAgentEnv := func(t *testing.T) {
 		t.Helper()
 		for _, key := range []string{
@@ -190,8 +194,10 @@ func TestDoctorAgentContextHasProfile(t *testing.T) {
 
 	t.Run("pm session with active profile ok", func(t *testing.T) {
 		clearAgentEnv(t)
-		t.Setenv("PM_SESSION_ID", "pm-session")
-		t.Setenv("PM_ACTIVE_PROFILE", "Contoso.Foo")
+		t.Setenv("PM_SESSION_ID", "pm-session-active")
+		if err := state.SetActiveProfile("Contoso.Foo"); err != nil {
+			t.Fatalf("SetActiveProfile: %v", err)
+		}
 
 		got := checkAgentContextHasProfile()
 		if got.Status != StatusOK {

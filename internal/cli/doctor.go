@@ -261,7 +261,14 @@ func checkSessionIDSource() CheckResult {
 
 func checkAgentContextHasProfile() CheckResult {
 	if ok, v := core.InAgentContext(); ok {
-		activeProfile := os.Getenv("PM_ACTIVE_PROFILE")
+		activeProfile, source, err := resolveActiveProfile()
+		if err != nil {
+			return CheckResult{
+				Name:    "agent-context-has-profile",
+				Status:  StatusFail,
+				Message: fmt.Sprintf("could not resolve active profile: %v", err),
+			}
+		}
 		if activeProfile == "" {
 			return CheckResult{
 				Name:    "agent-context-has-profile",
@@ -269,10 +276,14 @@ func checkAgentContextHasProfile() CheckResult {
 				Message: fmt.Sprintf("Inside an AI agent (%s set) without an active pm profile — your tools will use host config. Run: pm env apply <name> | Invoke-Expression", v),
 			}
 		}
+		detail := "shell"
+		if source == activeProfileSourceSession {
+			detail = "session"
+		}
 		return CheckResult{
 			Name:    "agent-context-has-profile",
 			Status:  StatusOK,
-			Message: fmt.Sprintf("active profile %q (agent: %s)", activeProfile, v),
+			Message: fmt.Sprintf("active profile %q (agent: %s, source: %s)", activeProfile, v, detail),
 		}
 	}
 	return CheckResult{
