@@ -87,6 +87,8 @@ This launches the Bubble Tea TUI. Highlight `my-first`, press `e` to edit,
 fill in the fields you need (e.g., set `azure.subscription` to a real GUID
 and `gh.user` to your GitHub handle). `Ctrl+S` to save, `Esc` to leave.
 
+To rename a profile, change the **Name** field here (or run `pm profile rename <old> <new>`); the profile file plus its default `~/.azure-<name>` / `~/.azd-<name>` and internal gh/kube directories are renamed to match.
+
 The full schema is documented in
 [`profile-schema.md`](profile-schema.md).
 

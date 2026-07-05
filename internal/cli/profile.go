@@ -71,7 +71,7 @@ func listAllProfiles() ([]*core.Profile, []string, []error, error) {
 func newProfileCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "profile",
-		Short: "Manage profile files (list, show, add, new, set-color, rm)",
+		Short: "Manage profile files (list, show, add, new, set-color, rename, rm)",
 		Long: `Operate on profile TOML files stored under the per-OS profiles dir.
 
 Profile editing beyond the basics (env vars, provider blocks, secret refs)
@@ -84,6 +84,7 @@ belongs to the TUI; use ` + "`pm`" + ` to launch it.`,
 	cmd.AddCommand(newProfileNewCmd())
 	cmd.AddCommand(newProfileRmCmd())
 	cmd.AddCommand(newProfileSetColorCmd())
+	cmd.AddCommand(newProfileRenameCmd())
 	return cmd
 }
 

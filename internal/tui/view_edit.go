@@ -3,6 +3,7 @@ package tui
 import (
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/textinput"
@@ -10,6 +11,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 
 	"github.com/bvorland/profilmanager/internal/core"
+	"github.com/bvorland/profilmanager/internal/state"
 )
 
 // editField indexes into editModel.inputs.
@@ -81,15 +83,23 @@ func newEnvRow(e core.EnvEntry) envRow {
 type editModel struct {
 	app *App
 
-	// Are we editing an existing profile (Name read-only) or creating?
+	// Are we editing an existing profile or creating a new one?
 	creating bool
 	origName string
+
+	// Original name-derived config dirs captured at load, plus whether each
+	// still follows the default pattern. This lets Name edits re-derive the
+	// azure/azd config-dir inputs (and drives the rename-on-save move).
+	origAzureDir string
+	origAzdDir   string
+	azureLinked  bool
+	azdLinked    bool
 
 	inputs       [fieldCount]textinput.Model
 	focus        int // 0..fieldCount-1 → text input; fieldCount → env list focus
 	envRows      []envRow
-	envFocus     int  // -1 if focus is on the env header
-	envSubFocus  int  // 0 = key, 1 = value/ref, 2 = toggle
+	envFocus     int // -1 if focus is on the env header
+	envSubFocus  int // 0 = key, 1 = value/ref, 2 = toggle
 	dirty        bool
 	statusErr    string
 	initialSaved string // snapshot of marshaled state for dirty tracking
@@ -121,6 +131,10 @@ func (em *editModel) load(p *core.Profile) {
 	em.envSubFocus = 0
 	em.dirty = false
 	em.envRows = em.envRows[:0]
+	em.origAzureDir = ""
+	em.origAzdDir = ""
+	em.azureLinked = false
+	em.azdLinked = false
 
 	for i := range em.inputs {
 		em.inputs[i].SetValue("")
@@ -163,6 +177,14 @@ func (em *editModel) load(p *core.Profile) {
 	for _, e := range p.Env {
 		em.envRows = append(em.envRows, newEnvRow(e))
 	}
+	if p.Azure != nil {
+		em.origAzureDir = p.Azure.ConfigDir
+	}
+	if p.Azd != nil {
+		em.origAzdDir = p.Azd.ConfigDir
+	}
+	em.azureLinked = em.origAzureDir != "" && core.IsDefaultAzureConfigDir(em.origAzureDir, p.Name)
+	em.azdLinked = em.origAzdDir != "" && core.IsDefaultAzdConfigDir(em.origAzdDir, p.Name)
 	em.inputs[fLabel].Focus()
 	em.focus = int(fLabel)
 	em.snapshot()
@@ -194,12 +216,10 @@ func (em *editModel) serialize() string {
 	return b.String()
 }
 
-// fieldFocusable returns true if the field is editable in the current
-// mode (Name is read-only when editing an existing profile).
-func (em *editModel) fieldFocusable(f editField) bool {
-	if f == fName && !em.creating {
-		return false
-	}
+// fieldFocusable reports whether the field is editable. Every field —
+// including Name — is now editable; renaming an existing profile is handled
+// on save (see saveRename).
+func (em *editModel) fieldFocusable(editField) bool {
 	return true
 }
 
@@ -294,9 +314,36 @@ func (em *editModel) Update(k tea.KeyMsg) (*editModel, tea.Cmd) {
 	if em.focus >= 0 && em.focus < int(fieldCount) {
 		var cmd tea.Cmd
 		em.inputs[em.focus], cmd = em.inputs[em.focus].Update(k)
+		em.syncNameDerivedInputs()
 		return em, cmd
 	}
 	return em, nil
+}
+
+// syncNameDerivedInputs keeps the azure/azd config-dir inputs in step with the
+// Name field while they remain linked to the default pattern, and unlinks a
+// config-dir input once the user edits it directly.
+func (em *editModel) syncNameDerivedInputs() {
+	switch editField(em.focus) {
+	case fName:
+		if em.creating {
+			return
+		}
+		newName := strings.TrimSpace(em.inputs[fName].Value())
+		if newName == "" {
+			return
+		}
+		if em.azureLinked {
+			em.inputs[fAzureConfigDir].SetValue(core.DefaultAzureConfigDir(newName))
+		}
+		if em.azdLinked {
+			em.inputs[fAzdConfigDir].SetValue(core.DefaultAzdConfigDir(newName))
+		}
+	case fAzureConfigDir:
+		em.azureLinked = false
+	case fAzdConfigDir:
+		em.azdLinked = false
+	}
 }
 
 func (em *editModel) focusNext() {
@@ -342,7 +389,8 @@ func (em *editModel) focusPrev() {
 }
 
 // save assembles a *core.Profile from inputs, validates it, and writes
-// the TOML file.
+// the TOML file. When the Name of an existing profile changed, the write
+// is routed through saveRename so the on-disk storage follows the new name.
 func (em *editModel) save() error {
 	name := strings.TrimSpace(em.inputs[fName].Value())
 	if err := core.ValidateName(name); err != nil {
@@ -386,7 +434,7 @@ func (em *editModel) save() error {
 		p.Env = append(p.Env, entry)
 	}
 	if !em.creating && name != em.origName {
-		return errors.New("profile name cannot be changed in edit mode (delete and re-create)")
+		return em.saveRename(p, name)
 	}
 	path, err := core.ProfilePath(name)
 	if err != nil {
@@ -395,6 +443,47 @@ func (em *editModel) save() error {
 	if err := p.Save(path); err != nil {
 		return err
 	}
+	em.snapshot()
+	return nil
+}
+
+// saveRename persists a renamed profile: it refuses to clobber an existing
+// profile, writes the new file, moves the name-derived state dirs (best-effort),
+// removes the old file, and updates the session markers so the active-profile
+// and last-profile pointers follow the rename.
+func (em *editModel) saveRename(p *core.Profile, newName string) error {
+	newPath, err := core.ProfilePath(newName)
+	if err != nil {
+		return err
+	}
+	if _, err := os.Stat(newPath); err == nil {
+		return fmt.Errorf("profile %q already exists", newName)
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return err
+	}
+	if err := p.Save(newPath); err != nil {
+		return err
+	}
+
+	azureNew, azdNew := "", ""
+	if p.Azure != nil {
+		azureNew = p.Azure.ConfigDir
+	}
+	if p.Azd != nil {
+		azdNew = p.Azd.ConfigDir
+	}
+	_ = core.MoveRenamedProfileDirs(em.origName, newName, em.origAzureDir, azureNew, em.origAzdDir, azdNew)
+
+	if oldPath, perr := core.ProfilePath(em.origName); perr == nil {
+		_ = os.Remove(oldPath)
+	}
+	_ = state.RenameProfileMarkers(em.origName, newName)
+
+	em.origName = newName
+	em.origAzureDir = azureNew
+	em.origAzdDir = azdNew
+	em.azureLinked = azureNew != "" && core.IsDefaultAzureConfigDir(azureNew, newName)
+	em.azdLinked = azdNew != "" && core.IsDefaultAzdConfigDir(azdNew, newName)
 	em.snapshot()
 	return nil
 }

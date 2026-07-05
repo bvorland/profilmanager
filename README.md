@@ -272,6 +272,33 @@ host-vs-sandbox is obvious:
 
 ---
 
+## Renaming a profile
+
+Rename from the CLI:
+
+```sh
+pm profile rename <old> <new>
+```
+
+…or open the profile in the TUI (`pm tui` → `e`) and edit the **Name** field —
+saving performs the rename. Either way the storage follows the new name:
+
+- the profile file `<name>.toml` is renamed and its `name` field updated;
+- default-pattern config dirs (`~/.azure-<name>`, `~/.azd-<name>`) are rewritten
+  to the new name (custom paths are left untouched);
+- the name-derived directories that hold cached logins/state are **moved** so
+  they follow the rename: `~/.azure-<name>`, `~/.azd-<name>`, and the internal
+  `gh` / `kube` state dirs;
+- the session's active-profile marker and the operator "last profile" pointer
+  are updated when they referenced the old name.
+
+Pass `--no-move-dirs` to repoint the paths without moving the directories (the
+providers recreate fresh, empty dirs on the next apply, so you would re-login).
+Cross-volume or in-use directories can't be moved; `pm` reports those and leaves
+them in place.
+
+---
+
 ## Agent guardrails
 
 `pm doctor` includes an `agent-context-has-profile` check. It warns when you're
@@ -521,7 +548,7 @@ Honest accounting of what's in and what's not, as of v0.x:
   timeout / output cap / redactor / audit.
 - TUI (`internal/tui`): dashboard, list, edit, profile wizard, doctor, confirm
   modal — Bubble Tea + Lipgloss; `NO_COLOR` honored.
-- CLI verbs: `pm profile {new,list,show,add,rm,set-color}`, `pm whoami`,
+- CLI verbs: `pm profile {new,list,show,add,rm,set-color,rename}`, `pm whoami`,
   `pm switch`, `pm exec`, `pm shell`, `pm copilot`, `pm env apply`,
   `pm shell-init`, `pm completion`, `pm session init`, `pm import-mj`,
   `pm doctor`, `pm mcp serve`, `pm statusline`,
