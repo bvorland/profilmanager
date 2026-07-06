@@ -35,6 +35,12 @@ Rationale: the name is simultaneously a filename, a TOML identifier, a CLI
 argument, and a shell-shim function name. Boring ASCII is the only character
 set that works in all four roles.
 
+> **Renaming a profile** keeps storage in sync: `pm profile rename <old> <new>`
+> (or editing the **Name** field in the TUI) renames the `<name>.toml` file and the
+> `name` field, rewrites the default-pattern `~/.azure-<name>` / `~/.azd-<name>` config
+> dirs, and moves the per-profile `gh` / `kube` state dirs to match. Custom
+> `config_dir` paths are left untouched. See the README's *Renaming a profile* section.
+
 ---
 
 ## `[azure]` — Azure CLI / `az`

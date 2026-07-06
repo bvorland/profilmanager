@@ -66,3 +66,6 @@ desktop.ini
 .copilot/skills/session-recovery/
 .copilot/skills/squad-conventions/
 .copilot/skills/test-discipline/
+
+# Private Squad-framework MCP client config (not part of pm)
+.mcp.json

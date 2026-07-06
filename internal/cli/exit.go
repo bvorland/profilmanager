@@ -80,6 +80,6 @@ func errInvalidUsage(format string, args ...any) error {
 func errStub(_ string, deps string) error {
 	return &ExitErrorT{
 		Code: ExitUnwiredStub,
-		Err:  fmt.Errorf("not yet implemented — wired in next phase (depends on: %s — see .squad/decisions.md)", deps),
+		Err:  fmt.Errorf("not yet implemented — wired in next phase (depends on: %s)", deps),
 	}
 }

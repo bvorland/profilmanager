@@ -1,5 +1,7 @@
 # profilmanager (`pm`)
 
+[![ci](https://github.com/bvorland/profilmanager/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/bvorland/profilmanager/actions/workflows/ci.yml)
+
 A TUI + CLI + MCP server that manages developer profiles — Azure subscriptions,
 GitHub accounts, `kubectl` contexts, git identity, and secrets — out of one
 place, on one binary, with one profile model. Switch profiles deliberately;
