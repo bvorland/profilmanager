@@ -183,7 +183,10 @@ func pickInteractiveShell() string {
 // shellFlavor maps a binary path to a flavor token used by the prompt /
 // arg builders. Defaults to "" (unknown).
 func shellFlavor(path string) string {
-	base := strings.ToLower(filepath.Base(path))
+	base := strings.ToLower(path)
+	if i := strings.LastIndexAny(base, `/\`); i >= 0 {
+		base = base[i+1:]
+	}
 	base = strings.TrimSuffix(base, ".exe")
 	switch base {
 	case "bash":

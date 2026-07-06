@@ -98,7 +98,7 @@ func buildPMBinary(t *testing.T) string {
 	goBin := requireGoToolchain(t)
 	root := repoRoot(t)
 	out := filepath.Join(t.TempDir(), "pm")
-	cmd := exec.Command(goBin, "build", "-o", out, "./cmd/pm")
+	cmd := exec.Command(goBin, "build", "-buildvcs=false", "-o", out, "./cmd/pm")
 	cmd.Dir = root
 	if buf, err := cmd.CombinedOutput(); err != nil {
 		t.Fatalf("go build: %v\n%s", err, buf)

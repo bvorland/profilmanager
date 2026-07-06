@@ -1,7 +1,15 @@
-# Shell scripts must use LF line endings to run on macOS / Linux CI.
+# Normalize all text files to LF in the working tree on every platform. GitHub's
+# windows-latest runners check out with core.autocrlf=true, which would otherwise
+# convert LF blobs to CRLF and trip the `gofmt -l .` lint gate and the raw-string
+# golden-snapshot tests (internal/tui, internal/tui/picker, internal/cli goldens).
+* text=auto eol=lf
+
+# Shell scripts must use LF to run on macOS / Linux CI.
 *.sh text eol=lf
 scripts/isolation/*.sh text eol=lf
 
-# Go source is gofmt-normalized (LF). Force LF on every checkout so the CI
-# `gofmt -l .` lint gate is not tripped by CRLF on Windows runners (autocrlf=true).
+# Go source is gofmt-normalized (LF).
 *.go text eol=lf
+
+# Golden snapshot fixtures are compared byte-for-byte against LF-rendered output.
+*.golden text eol=lf
