@@ -16,6 +16,8 @@ import (
 func withTempDirs(t *testing.T) string {
 	t.Helper()
 	dir := t.TempDir()
+	t.Setenv("HOME", dir)
+	t.Setenv("USERPROFILE", dir)
 	t.Setenv("APPDATA", dir)
 	t.Setenv("LOCALAPPDATA", dir)
 	t.Setenv("XDG_CONFIG_HOME", dir)

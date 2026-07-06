@@ -80,9 +80,11 @@ func testChildCommand(t *testing.T) (command, basename string) {
 func withFreshState(t *testing.T) (profilesDir, stateDir string) {
 	t.Helper()
 	root := t.TempDir()
-	// internal/core uses LOCALAPPDATA / XDG_STATE_HOME / APPDATA for
-	// pathing. Override those so the test stays in its sandbox on
-	// every supported OS.
+	// internal/core uses HOME (darwin ~/Library), LOCALAPPDATA / XDG_STATE_HOME /
+	// APPDATA for pathing. Override all of them so the test stays in its sandbox
+	// on every supported OS (darwin ignores XDG, so HOME is required there).
+	t.Setenv("HOME", root)
+	t.Setenv("USERPROFILE", root)
 	t.Setenv("LOCALAPPDATA", filepath.Join(root, "local"))
 	t.Setenv("APPDATA", filepath.Join(root, "roaming"))
 	t.Setenv("XDG_CONFIG_HOME", filepath.Join(root, "config"))
