@@ -575,7 +575,7 @@ Honest accounting of what's in and what's not, as of v0.x:
 
 ## Acknowledgments
 
-The inspiration is **[Majid Hajian](https://github.com/MajidHajian)**'s `mj`
+The inspiration is **[Majid Hajian](https://github.com/mhadaily)**'s `mj`
 PowerShell CLI — the `Switch-ProfileSmart` function and the
 `~/PSProfiles/<name>.env` layout were the daily driver this project grew out of.
 Majid's script is preserved (with profile names genericized) in

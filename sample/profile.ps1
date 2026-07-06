@@ -1,6 +1,6 @@
-﻿# ===== MJ CLI — Personal Command Hub =====
+# ===== MJ CLI — Personal Command Hub =====
 #
-# Origin: this script was authored by Majid Hajian (https://github.com/MajidHajian)
+# Origin: this script was authored by Majid Hajian (https://github.com/mhadaily)
 # and is the direct inspiration for profilmanager (`pm`). It's preserved here
 # verbatim (with profile names genericized for the public repo) so anyone
 # coming from the `mj` workflow can compare the mental model.
