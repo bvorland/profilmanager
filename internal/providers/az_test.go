@@ -188,19 +188,19 @@ func TestUpsertINIBehaviour(t *testing.T) {
 		name, in, wantContains string
 	}{
 		{
-			name:          "empty",
-			in:            "",
-			wantContains:  "[core]",
+			name:         "empty",
+			in:           "",
+			wantContains: "[core]",
 		},
 		{
-			name:          "no-section",
-			in:            "# header comment\n",
-			wantContains:  "enable_broker_on_windows = false",
+			name:         "no-section",
+			in:           "# header comment\n",
+			wantContains: "enable_broker_on_windows = false",
 		},
 		{
-			name:          "update-existing-key",
-			in:            "[core]\nenable_broker_on_windows = true\noutput = table\n",
-			wantContains:  "enable_broker_on_windows = false",
+			name:         "update-existing-key",
+			in:           "[core]\nenable_broker_on_windows = true\noutput = table\n",
+			wantContains: "enable_broker_on_windows = false",
 		},
 	}
 	for _, c := range cases {

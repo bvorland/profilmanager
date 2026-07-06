@@ -201,13 +201,13 @@ func TestConcurrentSetActiveProfile(t *testing.T) {
 func TestSanitizeID(t *testing.T) {
 	t.Parallel()
 	cases := map[string]string{
-		"":              "unknown",
-		"abc-123":       "abc-123",
-		"foo/bar":       "foo_bar",
-		"a b\tc":        "a_b_c",
-		"X.Y_Z-9":       "X.Y_Z-9",
-		"../../escape":  ".._.._escape",
-		"path\\sep":     "path_sep",
+		"":             "unknown",
+		"abc-123":      "abc-123",
+		"foo/bar":      "foo_bar",
+		"a b\tc":       "a_b_c",
+		"X.Y_Z-9":      "X.Y_Z-9",
+		"../../escape": ".._.._escape",
+		"path\\sep":    "path_sep",
 	}
 	for in, want := range cases {
 		if got := sanitizeID(in); got != want {

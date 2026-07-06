@@ -11,13 +11,13 @@ import (
 // identity attribution. The full token has dozens of claims; we read
 // only what `pm whoami` needs.
 type jwtClaims struct {
-	UPN         string `json:"upn,omitempty"`
-	UniqueName  string `json:"unique_name,omitempty"`
-	Email       string `json:"email,omitempty"`
-	PreferredU  string `json:"preferred_username,omitempty"`
-	Name        string `json:"name,omitempty"`
-	OID         string `json:"oid,omitempty"`
-	TID         string `json:"tid,omitempty"`
+	UPN        string `json:"upn,omitempty"`
+	UniqueName string `json:"unique_name,omitempty"`
+	Email      string `json:"email,omitempty"`
+	PreferredU string `json:"preferred_username,omitempty"`
+	Name       string `json:"name,omitempty"`
+	OID        string `json:"oid,omitempty"`
+	TID        string `json:"tid,omitempty"`
 }
 
 // decodeJWT decodes the payload segment of a JWT (or anything in the

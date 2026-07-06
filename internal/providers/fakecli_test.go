@@ -167,7 +167,7 @@ func writeShCaseBody(b *strings.Builder, c fakeCase, p struct {
 	fmt.Fprintf(b, "    exit %d\n", c.Exit)
 }
 
-// shQuote wraps s in single quotes, escaping any embedded ' as '\''.
+// shQuote wraps s in single quotes, escaping any embedded ' as '\”.
 func shQuote(s string) string {
 	return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'"
 }

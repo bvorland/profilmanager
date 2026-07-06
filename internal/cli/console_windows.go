@@ -17,9 +17,9 @@ import "golang.org/x/sys/windows"
 // x/sys/windows doesn't expose SetConsoleOutputCP / SetConsoleCP directly,
 // so we resolve them from kernel32 at runtime.
 var (
-	modKernel32          = windows.NewLazySystemDLL("kernel32.dll")
-	procSetConsoleOutCP  = modKernel32.NewProc("SetConsoleOutputCP")
-	procSetConsoleInCP   = modKernel32.NewProc("SetConsoleCP")
+	modKernel32         = windows.NewLazySystemDLL("kernel32.dll")
+	procSetConsoleOutCP = modKernel32.NewProc("SetConsoleOutputCP")
+	procSetConsoleInCP  = modKernel32.NewProc("SetConsoleCP")
 )
 
 const cpUTF8 = 65001
@@ -28,4 +28,3 @@ func initConsole() {
 	_, _, _ = procSetConsoleOutCP.Call(uintptr(cpUTF8))
 	_, _, _ = procSetConsoleInCP.Call(uintptr(cpUTF8))
 }
-

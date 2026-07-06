@@ -89,7 +89,7 @@ func TestResolveRefDispatchByScheme(t *testing.T) {
 		{"op://Personal/X/y", "op"},
 		{"wincred://Target", "wincred"},
 		{"dotenv:///tmp/.env#KEY", "dotenv"}, // by-name routing
-		{"just-a-literal", "dotenv"},          // empty-scheme literal
+		{"just-a-literal", "dotenv"},         // empty-scheme literal
 	}
 	for _, tc := range cases {
 		t.Run(tc.ref, func(t *testing.T) {
@@ -167,15 +167,15 @@ func TestDescribeRefRouting(t *testing.T) {
 func TestSchemeOf(t *testing.T) {
 	t.Parallel()
 	cases := map[string]string{
-		"op://x":               "op://",
-		"OP://x":               "OP://", // preserved verbatim; matcher lowercases
-		"dotenv://path#K":      "dotenv://",
-		"wincred://Target":     "wincred://",
-		"":                     "",
-		"plain-literal":        "",
-		"weird:thing":          "",
-		"with-dash://x":        "with-dash://",
-		"://leading-empty":     "",
+		"op://x":           "op://",
+		"OP://x":           "OP://", // preserved verbatim; matcher lowercases
+		"dotenv://path#K":  "dotenv://",
+		"wincred://Target": "wincred://",
+		"":                 "",
+		"plain-literal":    "",
+		"weird:thing":      "",
+		"with-dash://x":    "with-dash://",
+		"://leading-empty": "",
 	}
 	for in, want := range cases {
 		if got := schemeOf(in); got != want {

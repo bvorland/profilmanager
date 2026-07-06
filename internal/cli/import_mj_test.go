@@ -80,10 +80,10 @@ func TestReadMJEnvFile_SkipsAndClassifies(t *testing.T) {
 	}
 
 	want := map[string]core.EnvEntry{
-		"FOO":         {Key: "FOO", Value: "bar"},
-		"SPACED_KEY":  {Key: "SPACED_KEY", Value: "  has-leading-spaces-preserved"},
-		"API_KEY":     {Key: "API_KEY", Ref: "op://Vault/Item/password"},
-		"TRAILING":    {Key: "TRAILING", Value: "value-with-trailing-tabs"},
+		"FOO":        {Key: "FOO", Value: "bar"},
+		"SPACED_KEY": {Key: "SPACED_KEY", Value: "  has-leading-spaces-preserved"},
+		"API_KEY":    {Key: "API_KEY", Ref: "op://Vault/Item/password"},
+		"TRAILING":   {Key: "TRAILING", Value: "value-with-trailing-tabs"},
 	}
 	got := map[string]core.EnvEntry{}
 	for _, e := range entries {

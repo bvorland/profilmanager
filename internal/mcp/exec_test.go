@@ -146,13 +146,14 @@ func writeProfile(t *testing.T, name string, env []core.EnvEntry) {
 //     in every test, so the global config is always restored.
 //   - No test calls t.Parallel(), so execution is strictly sequential —
 //     no shared-state races between tests.
+//
 // Watch-list for future CI (if flake resurfaces):
-//   1. Add -race to the mcp package test runs — withAuditTempDir peeks
-//      auditCfg.dir without holding the lock ("safe because sequential",
-//      but -race will flag it).
-//   2. If tests ever adopt t.Parallel(), the SetConfig / SetAuditDir
-//      globals will need per-test isolation (e.g. a per-test server
-//      instance rather than package-level state).
+//  1. Add -race to the mcp package test runs — withAuditTempDir peeks
+//     auditCfg.dir without holding the lock ("safe because sequential",
+//     but -race will flag it).
+//  2. If tests ever adopt t.Parallel(), the SetConfig / SetAuditDir
+//     globals will need per-test isolation (e.g. a per-test server
+//     instance rather than package-level state).
 func TestExec_RedactsSecretFromOutput(t *testing.T) {
 	withFreshState(t)
 

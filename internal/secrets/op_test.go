@@ -213,9 +213,9 @@ func TestOpResolverDescribeBadRef(t *testing.T) {
 
 func TestParseOpRef(t *testing.T) {
 	cases := []struct {
-		in                  string
-		vault, item, field  string
-		wantErr             bool
+		in                 string
+		vault, item, field string
+		wantErr            bool
 	}{
 		{"op://V/I/F", "V", "I", "F", false},
 		{"op://Personal/GitHub Token/credential", "Personal", "GitHub Token", "credential", false},

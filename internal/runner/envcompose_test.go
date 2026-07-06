@@ -128,8 +128,8 @@ func sortedAscending(s []string) bool {
 // verify ResolveSecrets actually wires through secrets.ResolveRef.
 type fakeResolver struct{}
 
-func (*fakeResolver) Name() string   { return "fake-runner" }
-func (*fakeResolver) Scheme() string { return "fake://" }
+func (*fakeResolver) Name() string    { return "fake-runner" }
+func (*fakeResolver) Scheme() string  { return "fake://" }
 func (*fakeResolver) Available() bool { return true }
 func (*fakeResolver) Resolve(_ context.Context, ref string) (secrets.Secret, error) {
 	tail := strings.TrimPrefix(ref, "fake://")

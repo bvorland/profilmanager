@@ -24,14 +24,14 @@ func TestPickInteractiveShellHonorsSHELL(t *testing.T) {
 
 func TestShellFlavorMappings(t *testing.T) {
 	cases := map[string]string{
-		"/usr/bin/bash":               "bash",
+		"/usr/bin/bash":                "bash",
 		`C:\Program Files\zsh\zsh.exe`: "zsh",
-		"/usr/local/bin/fish":         "fish",
-		"pwsh.exe":                    "pwsh",
-		"powershell":                  "pwsh",
-		"/bin/sh":                     "bash",
-		"cmd.exe":                     "cmd",
-		"weird":                       "",
+		"/usr/local/bin/fish":          "fish",
+		"pwsh.exe":                     "pwsh",
+		"powershell":                   "pwsh",
+		"/bin/sh":                      "bash",
+		"cmd.exe":                      "cmd",
+		"weird":                        "",
 	}
 	for in, want := range cases {
 		if got := shellFlavor(in); got != want {
