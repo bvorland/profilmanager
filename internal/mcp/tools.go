@@ -481,14 +481,23 @@ func handleResolveSecretRef(ctx context.Context, req mcp.CallToolRequest) (*mcp.
 	})
 
 	if descErr != nil && !errors.Is(descErr, secrets.ErrUnavailable) && !errors.Is(descErr, secrets.ErrNoResolver) {
-		// Hard error (parse failure, unexpected backend error) — still
-		// safe to surface because md never carries a value.
-		return mcp.NewToolResultErrorf("resolve_secret_ref %q: %v", ref, descErr), nil
+		// Hard error (parse failure, unexpected backend error). Do NOT
+		// reflect the backend error text to the MCP peer: a resolver error
+		// can embed bytes read from an attacker-influenced path (e.g. a
+		// dotenv:// ref pointed at ~/.git-credentials, whose first line has
+		// no '=' and would otherwise be echoed back). The operator can read
+		// the detailed reason from the local, 0600 audit log.
+		return mcp.NewToolResultErrorf("resolve_secret_ref %q: reference could not be described (backend error; see local audit log)", ref), nil
 	}
 
 	// Compose response. Whether descErr is set or not, md is populated
 	// with at least Ref + Error fields by DescribeRef on the failure
 	// path.
+	// Defense in depth: never reflect a backend-populated free-text error
+	// over MCP. Structured Available/Exists already convey state, and an
+	// error string could carry bytes from an attacker-influenced path.
+	md.Error = ""
+
 	resolver, available := lookupResolverForRef(ref)
 	out := resolveSecretRefResult{
 		Ref:       ref,

@@ -190,7 +190,7 @@ func readDotEnv(path string) (map[string]string, error) {
 		}
 		eq := strings.IndexByte(trimmed, '=')
 		if eq <= 0 {
-			return nil, fmt.Errorf("dotenv %s:%d: missing '=' in %q", path, lineNo, line)
+			return nil, fmt.Errorf("dotenv %s:%d: line is not KEY=VALUE (missing '=' separator)", path, lineNo)
 		}
 		key := strings.TrimSpace(trimmed[:eq])
 		val := trimmed[eq+1:]
