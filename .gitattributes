@@ -1,3 +1,7 @@
 # Shell scripts must use LF line endings to run on macOS / Linux CI.
 *.sh text eol=lf
 scripts/isolation/*.sh text eol=lf
+
+# Go source is gofmt-normalized (LF). Force LF on every checkout so the CI
+# `gofmt -l .` lint gate is not tripped by CRLF on Windows runners (autocrlf=true).
+*.go text eol=lf
